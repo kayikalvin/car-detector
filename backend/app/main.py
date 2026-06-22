@@ -6,7 +6,7 @@ app = FastAPI(title="Car Detector API")
 
 # Update with your Vercel frontend domain after deployment
 origins = [
-    "http://localhost:3000",
+    "http://localhost:5173",
     "https://your-app.vercel.app",   # <-- replace with your real Vercel URL
 ]
 
