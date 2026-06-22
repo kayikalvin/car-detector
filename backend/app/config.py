@@ -1,6 +1,6 @@
 import os
 
-MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "yolov8n.pt"))
+MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "models", "yolov8n.pt"))
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model weights not found at {MODEL_PATH}")
 CONFIDENCE_THRESHOLD = 0.5

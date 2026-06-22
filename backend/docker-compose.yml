@@ -4,4 +4,4 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./models:/app/models   # persist the YOLO model across restarts
+      - ./app/models:/app/models   # persist the YOLO model across restarts
