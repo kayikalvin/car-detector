@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: car-detector-api
+    env: docker
+    region: oregon
+    plan: free
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
