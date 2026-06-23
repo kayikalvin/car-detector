@@ -46,7 +46,7 @@ async def detect_video(file: UploadFile = File(...)):
 
     output_path = input_path.replace(".mp4", "_out.mp4")
     try:
-        process_video(input_path, output_path)
+        stats = process_video(input_path, output_path)
     except Exception as e:
         raise HTTPException(500, f"Video processing failed: {str(e)}")
     finally:
@@ -60,5 +60,11 @@ async def detect_video(file: UploadFile = File(...)):
         output_path,
         media_type="video/mp4",
         filename="annotated_video.mp4",
-        background=BackgroundTask(cleanup, output_path)
+        background=BackgroundTask(cleanup, output_path),
+        headers={
+            "X-Frame-Count": str(stats["frame_count"]),
+            "X-Max-Concurrent-Detections": str(stats["max_concurrent_detections"]),
+            "X-Total-Detection-Events": str(stats["total_detection_events"]),
+            "Access-Control-Expose-Headers": "X-Frame-Count, X-Max-Concurrent-Detections, X-Total-Detection-Events",
+        },
     )

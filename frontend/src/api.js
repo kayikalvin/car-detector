@@ -21,9 +21,9 @@ export async function detectImage(file, signal) {
 
   return res.json();
 }
-
 /**
- * Sends a video for annotation. Returns a Blob (the annotated mp4).
+ * Sends a video for annotation. Returns { blob, stats } where stats is
+ * { frameCount, maxConcurrentDetections, totalDetectionEvents }.
  */
 export async function detectVideo(file, signal) {
   const formData = new FormData();
@@ -40,7 +40,14 @@ export async function detectVideo(file, signal) {
     throw new Error(message);
   }
 
-  return res.blob();
+  const stats = {
+    frameCount: Number(res.headers.get("X-Frame-Count")) || 0,
+    maxConcurrentDetections: Number(res.headers.get("X-Max-Concurrent-Detections")) || 0,
+    totalDetectionEvents: Number(res.headers.get("X-Total-Detection-Events")) || 0,
+  };
+
+  const blob = await res.blob();
+  return { blob, stats };
 }
 
 /**

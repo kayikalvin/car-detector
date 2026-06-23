@@ -436,6 +436,7 @@ function ImageMode({ backendOk }) {
 function VideoMode({ backendOk }) {
   const [state, setState] = useState("idle");
   const [videoUrl, setVideoUrl] = useState(null);
+  const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
   const abortRef = useRef(null);
@@ -448,13 +449,15 @@ function VideoMode({ backendOk }) {
 
     setState("loading");
     setVideoUrl(null);
+    setStats(null);
     setError("");
     setProgress("PROCESSING FRAMES...");
 
     try {
-      const blob = await detectVideo(file, abortRef.current.signal);
+      const { blob, stats } = await detectVideo(file, abortRef.current.signal);
       const url = URL.createObjectURL(blob);
       setVideoUrl(url);
+      setStats(stats);
       setState("done");
       setProgress("");
     } catch (e) {
@@ -629,7 +632,20 @@ function VideoMode({ backendOk }) {
         )}
       </main>
 
-      <TelemetrySidebar detections={[]} mode="video" backendOk={backendOk} />
+      <TelemetrySidebar
+        detections={
+          stats
+            ? Array.from({ length: stats.maxConcurrentDetections }, (_, i) => ({
+                bbox: [0, 0, 0, 0],
+                confidence: 1,
+                class_name: "vehicle",
+                _summaryIndex: i,
+              }))
+            : []
+        }
+        mode="video"
+        backendOk={backendOk}
+      />
     </div>
   );
 }
