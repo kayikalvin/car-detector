@@ -858,7 +858,7 @@ function LiveMode({ backendOk }) {
                 (e.currentTarget.style.background = "transparent")
               }
             >
-              ▶ START_FEED
+               START_FEED
             </button>
           ) : (
             <button
