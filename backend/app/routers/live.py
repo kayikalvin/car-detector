@@ -1,4 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 import cv2
 import numpy as np
 import base64
@@ -12,8 +13,9 @@ async def live_detection(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
+            if websocket.client_state != WebSocketState.CONNECTED:
+                break
             data = await websocket.receive_text()
-            # Frame sent as base64 JPEG (with or without data URI prefix)
             if ',' in data:
                 data = data.split(',')[1]
             img_bytes = base64.b64decode(data)
@@ -28,8 +30,8 @@ async def live_detection(websocket: WebSocket):
                 b64 = image_to_base64(annotated)
                 await websocket.send_text(f"data:image/jpeg;base64,{b64}")
             except Exception as e:
-                    print(f"Frame processing error: {e}")
-                    continue
-                
-    except WebSocketDisconnect:
+                print(f"Frame processing error: {e}")
+                continue
+
+    except (WebSocketDisconnect, RuntimeError):
         print("Live client disconnected")

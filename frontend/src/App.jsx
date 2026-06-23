@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import ViewfinderFrame from "./components/Viewfinderframe.jsx";
-import { detectImage, detectVideo, checkHealth, openLiveSocket } from "./api.js";
+import {
+  detectImage,
+  detectVideo,
+  checkHealth,
+  openLiveSocket,
+} from "./api.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function useSystemClock() {
@@ -21,8 +26,8 @@ function ConfidenceBar({ value }) {
     pct >= 80
       ? "var(--color-phosphor)"
       : pct >= 50
-      ? "var(--color-amber)"
-      : "var(--color-alert)";
+        ? "var(--color-amber)"
+        : "var(--color-alert)";
   return (
     <div className="flex items-center gap-2">
       <div
@@ -56,7 +61,10 @@ function BBoxOverlay({ detections, naturalWidth, naturalHeight }) {
   }, [naturalWidth, naturalHeight]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 pointer-events-none z-10">
+    <div
+      ref={containerRef}
+      className="absolute inset-0 pointer-events-none z-10"
+    >
       {detections.map((det, i) => {
         const [x1, y1, x2, y2] = det.bbox;
         const left = x1 * scale.x;
@@ -172,7 +180,8 @@ function TelemetrySidebar({ detections, mode, backendOk }) {
                 <div key={i} className="flex flex-col gap-1">
                   <div className="flex justify-between text-[11px]">
                     <span style={{ color: "var(--color-phosphor)" }}>
-                      {String(i + 1).padStart(2, "0")} {det.class_name?.toUpperCase() ?? "VEH"}
+                      {String(i + 1).padStart(2, "0")}{" "}
+                      {det.class_name?.toUpperCase() ?? "VEH"}
                     </span>
                   </div>
                   <ConfidenceBar value={det.confidence} />
@@ -180,7 +189,8 @@ function TelemetrySidebar({ detections, mode, backendOk }) {
                     className="text-[9px] tabular-nums"
                     style={{ color: "var(--color-muted)" }}
                   >
-                    [{Math.round(x1)},{Math.round(y1)}] [{Math.round(x2)},{Math.round(y2)}]
+                    [{Math.round(x1)},{Math.round(y1)}] [{Math.round(x2)},
+                    {Math.round(y2)}]
                   </p>
                 </div>
               );
@@ -238,7 +248,7 @@ function ImageMode({ backendOk }) {
       const file = e.dataTransfer.files[0];
       if (file?.type.startsWith("image/")) handleFile(file);
     },
-    [handleFile]
+    [handleFile],
   );
 
   const detections = result?.detections ?? [];
@@ -247,10 +257,10 @@ function ImageMode({ backendOk }) {
     state === "loading"
       ? "SCANNING..."
       : state === "done"
-      ? `${detections.length} TGT LOCKED`
-      : state === "error"
-      ? "SCAN_ERR"
-      : "STANDBY";
+        ? `${detections.length} TGT LOCKED`
+        : state === "error"
+          ? "SCAN_ERR"
+          : "STANDBY";
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -477,8 +487,8 @@ function VideoMode({ backendOk }) {
             state === "loading"
               ? "PROCESSING..."
               : state === "done"
-              ? "OUTPUT_READY"
-              : "STANDBY"
+                ? "OUTPUT_READY"
+                : "STANDBY"
           }
           statusActive={state === "loading"}
           showSweep={state === "loading"}
@@ -656,14 +666,40 @@ function LiveMode({ backendOk }) {
   const [detections, setDetections] = useState([]);
   const [frameCount, setFrameCount] = useState(0);
   const [error, setError] = useState("");
+  const [devices, setDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const wsRef = useRef(null);
   const streamRef = useRef(null);
   const loopRef = useRef(null);
 
+  // Enumerate cameras once on mount. Labels are blank until permission
+  // has been granted at least once, so we request a throwaway stream first.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach((t) => t.stop());
+
+        const list = await navigator.mediaDevices.enumerateDevices();
+        const cams = list.filter((d) => d.kind === "videoinput");
+        if (!cancelled) {
+          setDevices(cams);
+          if (cams.length > 0) setSelectedDeviceId(cams[0].deviceId);
+        }
+      } catch (e) {
+        if (!cancelled) setError("Camera permission denied or unavailable");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const stop = useCallback(() => {
-    cancelAnimationFrame(loopRef.current);
+    clearTimeout(loopRef.current);
     wsRef.current?.close();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setRunning(false);
@@ -674,7 +710,12 @@ function LiveMode({ backendOk }) {
   const start = useCallback(async () => {
     setError("");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = {
+        video: selectedDeviceId
+          ? { deviceId: { exact: selectedDeviceId } }
+          : true,
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -699,17 +740,13 @@ function LiveMode({ backendOk }) {
       const ctx = canvas?.getContext("2d");
 
       const sendFrame = () => {
-        if (ws.readyState === WebSocket.OPEN && videoRef.current && canvas) {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        if (videoRef.current && canvas) {
           canvas.width = videoRef.current.videoWidth || 640;
           canvas.height = videoRef.current.videoHeight || 480;
           ctx.drawImage(videoRef.current, 0, 0);
-          canvas.toBlob(
-            (blob) => {
-              if (blob && ws.readyState === WebSocket.OPEN) ws.send(blob);
-            },
-            "image/jpeg",
-            0.7
-          );
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          ws.send(dataUrl);
         }
         loopRef.current = setTimeout(sendFrame, 200);
       };
@@ -721,7 +758,7 @@ function LiveMode({ backendOk }) {
     } catch (e) {
       setError(e.message);
     }
-  }, []);
+  }, [selectedDeviceId]);
 
   useEffect(() => () => stop(), [stop]);
 
@@ -781,7 +818,30 @@ function LiveMode({ backendOk }) {
           </div>
         </ViewfinderFrame>
 
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center flex-wrap">
+          {devices.length > 0 && (
+            <select
+              value={selectedDeviceId}
+              onChange={(e) => setSelectedDeviceId(e.target.value)}
+              disabled={running}
+              className="px-3 py-2 text-[11px] tracking-widest border bg-transparent disabled:opacity-40"
+              style={{
+                borderColor: "var(--color-line-bright)",
+                color: "var(--color-phosphor)",
+              }}
+            >
+              {devices.map((d, i) => (
+                <option
+                  key={d.deviceId}
+                  value={d.deviceId}
+                  style={{ background: "var(--color-panel)" }}
+                >
+                  {d.label || `CAMERA_${String(i).padStart(2, "0")}`}
+                </option>
+              ))}
+            </select>
+          )}
+
           {!running ? (
             <button
               onClick={start}
@@ -921,17 +981,11 @@ export default function App() {
                 className="px-3 py-1 text-[10px] tracking-widest transition-colors"
                 style={{
                   color:
-                    mode === m
-                      ? "var(--color-void)"
-                      : "var(--color-muted)",
+                    mode === m ? "var(--color-void)" : "var(--color-muted)",
                   background:
-                    mode === m
-                      ? "var(--color-phosphor)"
-                      : "transparent",
+                    mode === m ? "var(--color-phosphor)" : "transparent",
                   border: `1px solid ${
-                    mode === m
-                      ? "var(--color-phosphor)"
-                      : "var(--color-line)"
+                    mode === m ? "var(--color-phosphor)" : "var(--color-line)"
                   }`,
                 }}
               >
@@ -946,19 +1000,15 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                backendOk === null
-                  ? ""
-                  : backendOk
-                  ? "animate-blink-slow"
-                  : ""
+                backendOk === null ? "" : backendOk ? "animate-blink-slow" : ""
               }`}
               style={{
                 background:
                   backendOk === null
                     ? "var(--color-muted-dim)"
                     : backendOk
-                    ? "var(--color-phosphor)"
-                    : "var(--color-alert)",
+                      ? "var(--color-phosphor)"
+                      : "var(--color-alert)",
               }}
             />
             <span
@@ -967,19 +1017,22 @@ export default function App() {
                   backendOk === null
                     ? "var(--color-muted-dim)"
                     : backendOk
-                    ? "var(--color-phosphor)"
-                    : "var(--color-alert)",
+                      ? "var(--color-phosphor)"
+                      : "var(--color-alert)",
               }}
             >
               {backendOk === null
                 ? "CONNECTING"
                 : backendOk
-                ? "BACKEND OK"
-                : "BACKEND ERR"}
+                  ? "BACKEND OK"
+                  : "BACKEND ERR"}
             </span>
           </div>
 
-          <span style={{ color: "var(--color-muted)" }} className="tabular-nums">
+          <span
+            style={{ color: "var(--color-muted)" }}
+            className="tabular-nums"
+          >
             {clock}
           </span>
         </div>
