@@ -90,7 +90,7 @@ function BBoxOverlay({ detections, naturalWidth, naturalHeight }) {
                 lineHeight: "18px",
               }}
             >
-              {det.class_name?.toUpperCase() ?? "TGT"} {pct}%
+              {det.class?.toUpperCase() ?? "TGT"} {pct}%
             </div>
           </div>
         );
@@ -181,7 +181,7 @@ function TelemetrySidebar({ detections, mode, backendOk }) {
                   <div className="flex justify-between text-[11px]">
                     <span style={{ color: "var(--color-phosphor)" }}>
                       {String(i + 1).padStart(2, "0")}{" "}
-                      {det.class_name?.toUpperCase() ?? "VEH"}
+                      {det.class?.toUpperCase() ?? "VEH"}
                     </span>
                   </div>
                   <ConfidenceBar value={det.confidence} />

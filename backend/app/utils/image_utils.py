@@ -6,7 +6,8 @@ def draw_boxes(image: np.ndarray, detections: list) -> np.ndarray:
     for det in detections:
         x1, y1, x2, y2 = det["bbox"]
         conf = det["confidence"]
-        label = f"car {conf:.2f}"
+        cls_name = det.get("class", "object")
+        label = f"{cls_name} {conf:.2f}"
         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
         cv2.rectangle(image, (x1, y1 - th - 10), (x1 + tw, y1), (0, 255, 0), -1)
