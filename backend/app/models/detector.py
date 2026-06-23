@@ -1,27 +1,26 @@
 from ultralytics import YOLO
-from app.config import MODEL_PATH, CONFIDENCE_THRESHOLD, CAR_CLASS_ID
+from app.config import MODEL_PATH, CONFIDENCE_THRESHOLD
 import numpy as np
 
-class CarDetector:
+class Detector:
     def __init__(self):
         self.model = YOLO(MODEL_PATH)
 
     def detect(self, image: np.ndarray):
-        """Return list of car detections with bbox and confidence."""
+        """Return list of detections with bbox, confidence, and class name."""
         results = self.model(image, verbose=False, conf=CONFIDENCE_THRESHOLD)[0]
         detections = []
         if results.boxes is not None:
             for box in results.boxes:
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                if cls_id == CAR_CLASS_ID:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                    detections.append({
-                        "bbox": [x1, y1, x2, y2],
-                        "confidence": round(conf, 4),
-                        "class": "car"
-                    })
+                x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                detections.append({
+                    "bbox": [x1, y1, x2, y2],
+                    "confidence": round(conf, 4),
+                    "class": self.model.names[cls_id]
+                })
         return detections
 
 # Global detector (singleton) loaded once at startup
-detector = CarDetector()
+detector = Detector()
