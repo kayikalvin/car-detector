@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:8000";
+// const BASE_URL = "http://localhost:8000";
+const BASE_URL = "https://car-detector-api.onrender.com";
 
 /**
  * Detects cars in a single image.
