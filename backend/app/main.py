@@ -4,12 +4,11 @@ from app.routers import detection, live
 
 app = FastAPI(title="Car Detector API")
 
-# Update with your Vercel frontend domain after deployment
+# Origins should be DOMAIN ONLY, no paths
 origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "https://object-detector-gray.vercel.app/health",   # <-- replace with your real Vercel URL
-    "https://object-detector-gray.vercel.app/",   # <-- replace with your real Vercel URL
+    "https://object-detector-gray.vercel.app",  # ← Remove /health and /
 ]
 
 app.add_middleware(
