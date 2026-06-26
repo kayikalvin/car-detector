@@ -59,7 +59,7 @@ export async function detectVideo(file, signal) {
  * Checks backend health. Used for the connection indicator in the status bar.
  */
 export async function checkHealth(signal) {
-  const res = await fetch(`${BASE_URL}/health`, { signal });
+  const res = await fetch(`${BASE_URL}/api/status`, { signal });
   if (!res.ok) throw new Error("Backend unhealthy");
   return res.json();
 }

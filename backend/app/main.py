@@ -26,6 +26,6 @@ app.include_router(live.router)
 async def root():
     return {"message": "Car Detector API is running."}
 
-@app.get("/health")
+@app.get("/api/status")
 async def health():
     return {"status": "healthy"}
