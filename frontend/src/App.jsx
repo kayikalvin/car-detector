@@ -1042,7 +1042,7 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         {mode === "image" && <ImageMode backendOk={!!backendOk} />}
         {mode === "video" && <VideoMode backendOk={!!backendOk} />}
-        {mode === "live" && <LiveMode backendOk={!!backendOk} />}
+        {/* {mode === "live" && <LiveMode backendOk={!!backendOk} />} */}
       </div>
 
       {/* footer rail */}
