@@ -16,10 +16,10 @@ RUN pip install --no-cache-dir \
 # Install opencv-headless FIRST so ultralytics' resolver sees it satisfied
 RUN pip install --no-cache-dir opencv-python-headless==4.10.0.84
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 EXPOSE 8000
 
