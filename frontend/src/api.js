@@ -1,5 +1,9 @@
 // const BASE_URL = "http://localhost:8000";
-const BASE_URL = "https://car-detector-api.onrender.com";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+
+
 
 /**
  * Detects cars in a single image.
