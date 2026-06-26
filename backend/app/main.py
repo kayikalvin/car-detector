@@ -8,7 +8,8 @@ app = FastAPI(title="Car Detector API")
 origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "https://object-detector-gray.vercel.app",   # <-- replace with your real Vercel URL
+    "https://object-detector-gray.vercel.app/health",   # <-- replace with your real Vercel URL
+    "https://object-detector-gray.vercel.app/",   # <-- replace with your real Vercel URL
 ]
 
 app.add_middleware(
